@@ -32,8 +32,17 @@ router.get("/:code", async (req, res, next) => {
 			[code]
 		);
 
+		const industriesResult = await db.query(
+			`SELECT i.industry
+       FROM industries AS i
+       JOIN companies_industries AS ci ON i.code = ci.industry_code
+       WHERE ci.company_code = $1`,
+			[code]
+		);
+
 		const company = companyResult.rows[0];
 		company.invoices = invoicesResult.rows.map((inv) => inv.id);
+		company.industries = industriesResult.rows.map((ind) => ind.industry);
 
 		return res.json({ company });
 	} catch (err) {
@@ -61,7 +70,7 @@ router.put("/:code", async (req, res, next) => {
 		const { code } = req.params;
 		const { name, description } = req.body;
 		const result = await db.query(
-			"UPDATE companies SET name = $1, description = $2 WHERE code = $3 RETURNING code, name, description",
+			"UPDATE companies SET name=$1, description=$2 WHERE code=$3 RETURNING code, name, description",
 			[name, description, code]
 		);
 
